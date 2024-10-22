@@ -1,17 +1,16 @@
 <?php 
 
 // Eintrag in Crontab
+//
+// Sofern kein PHP-CLI zur Verfügung steht:
 // */1 * * * * curl --silent http://localhost/homehub/diagramm_collect.php >/dev/null 2>&1
+//
+// mit PHP-CLI
+// */1 * * * * /usr/bin/php -f /pfad-zu-homehub/diagramm_collect.php >/dev/null 2>&1
 
-include("config/config.php");
 
-// interface Pfad bestimmen
-$interface = $_SERVER['SERVER_NAME'].":".$_SERVER['SERVER_PORT'].str_replace("diagramm_collect.php", "",$_SERVER['PHP_SELF']);
-if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') {
-    $interface = "https://".$interface;
-}
-else $interface = "http://".$interface;
-echo $interface;
+require_once(__DIR__.'/interface.php');
+
 
 date_default_timezone_set("Europe/Berlin");
 $tage = array("So", "Mo", "Di", "Mi", "Do", "Fr", "Sa");
@@ -113,9 +112,7 @@ if(isset($diagramm_change))
   $historyZaehler = 0;
 	
   // Abfrage an die CCU
-  $xmlFile = $interface.'interface.php?state.cgi&onlyvalue=1&datapoint_id='.$diagramm_change;
-    echo $xmlFile; 
-  $xml = simplexml_load_file($xmlFile);
+  $xml = simplexml_load_string(api_state($ccu, $diagramm_change, true));
 	echo $xml;
   foreach ( $xml->datapoint as $states )  
   {  
@@ -195,10 +192,8 @@ if(isset($diagramm))
   $historyZaehler = 0;
 	
   // Abfrage an die CCU
-  $xmlFile = $interface.'/interface.php?state.cgi&onlyvalue=1&datapoint_id='.$diagramm;
-  echo $xmlFile; 
-  $xml = simplexml_load_file($xmlFile);
-echo $xml;
+  $xml = simplexml_load_string(api_state($ccu, $diagramm, true));
+  echo $xml;
   foreach ($xml->datapoint as $states)  
   {  
     $inhalt = "";
@@ -264,13 +259,4 @@ echo $xml;
 }
 echo "Ende";
 
-function curl_get_content( $url ) {
-    $curl_handle=curl_init();
-    curl_setopt($curl_handle, CURLOPT_URL,$url);
-    curl_setopt($curl_handle, CURLOPT_CONNECTTIMEOUT, 2);
-    curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, 1);
-    $content = curl_exec($curl_handle);
-    curl_close($curl_handle);
-    return $content;
-}
 ?>
