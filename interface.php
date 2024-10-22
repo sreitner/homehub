@@ -8,6 +8,10 @@ $ccu_pass = "";  // in die Anführungsstriche das dazugehörige Kennwort
 
 */
 
+if (!file_exists(__DIR__.'/config/config.php')) {
+	header('Location: setup.php');
+	exit;
+}
 require_once(__DIR__.'/config/config.php');
 
 // Konfiguration als Array aus Config-Variablen zusammenbauen
