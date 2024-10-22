@@ -40,11 +40,15 @@ function ccu_remote($ccu, $ccu_request, $plain_result = false) {
   curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
   curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 2);
   curl_setopt($curl, CURLOPT_TIMEOUT, 20);
+  curl_setopt($curl, CURLOPT_FAILONERROR, true);
   if (!empty($ccu['https'])) {
     curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
     curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
   }
   $content = curl_exec($curl);
+  if ($content === false) {
+    die(basename(__FILE__) . " - CURL error " . curl_getinfo($curl_handle, CURLINFO_HTTP_CODE) . " " . curl_error($curl_handle));
+  }
   curl_close($curl);
   #var_dump($content);
 
