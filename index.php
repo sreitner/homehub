@@ -141,19 +141,19 @@ else
 	
 // CUSTOM # Anpassungen des Benutzers
 $custom = array();
-if(file_exists('config/custom.json')) 
+#if(file_exists('config/custom.json')) 
+if($str = read_config('config/custom.json'))
 {
-    $str = file_get_contents('config/custom.json');
+    #$str = file_get_contents('config/custom.json');
 	
 	// Prüfe UTF-8
-	if (extension_loaded("mbstring")) {
-		if (!mb_check_encoding($str, 'UTF-8')) 
-		{
-			echo "Datei 'config/config/custom.json' entspricht nicht dem UTF-8 Format. Bitte als UTF-8 speichern.";
-			exit();
-		}	
-	}
-	
+	#if (extension_loaded("mbstring")) {
+	#	if (!mb_check_encoding($str, 'UTF-8')) 
+	#	{
+	#		echo "Datei 'config/config/custom.json' entspricht nicht dem UTF-8 Format. Bitte als UTF-8 speichern.";
+	#		exit();
+	#	}	
+	#}
 	
     $json = json_decode($str, true);
     if(isset($json['custom'])) 
@@ -170,9 +170,10 @@ else
 
 // MAPPING # Voreingestellte Icon für Komponenten
 $mapping = array();
-if(file_exists('config/mapping.json')) 
+#if(file_exists('config/mapping.json')) 
+if($str = read_config('config/mapping.json'))
 {
-    $str = file_get_contents('config/mapping.json');
+    #$str = file_get_contents('config/mapping.json');
     $json = json_decode($str, true);
     if(isset($json['mapping'])) 
 	{
@@ -184,14 +185,14 @@ else
 	"Konfigurationsdatei 'config/mapping.json' nicht gefunden!";
 	exit();
 }
-    
 
 
 // EXPORT # Lade Exportdatei der Homematic
 $export = array();
-if(file_exists('config/export.json')) 
+#if(file_exists('config/export.json')) 
+if($str = read_config('config/export.json'))
 {
-    $str = file_get_contents('config/export.json');
+    #$str = file_get_contents('config/export.json');
     $export = json_decode($str, true);
 }
 else 
@@ -199,7 +200,6 @@ else
 	"Konfigurationsdatei 'config/export.json' nicht gefunden!";
 	exit();
 }
-    
 
 
 // Komponenten einlesen
@@ -440,13 +440,14 @@ if(count((array)$export) > 0)
 					if($Page == $Servicemeldungen)
 					{
 				
-						if(file_exists("dev/export.json")) { 
+						#if(file_exists("dev/export.json")) { 
+						if($str = read_config("dev/export.json")) { 
 							$xml = simplexml_load_file('dev/systemNotification.php'); 
-							$str = file_get_contents('dev/export.json');
+							#$str = file_get_contents('dev/export.json');
 						} else {
-						
 							$xml = simplexml_load_string(api_systemNotification($ccu));
-							$str = file_get_contents('config/export.json');
+							#$str = file_get_contents('config/export.json');
+							$str = read_config('config/export.json');
 						}
 						// Für Devices
 						
@@ -643,11 +644,6 @@ if(count((array)$export) > 0)
 		
 		<?php if(file_exists("custom/js/custom.js")) { echo "<script src='custom/js/custom.js?id=".rand(1,100)."'></script>"; } ?>
         <?php if(isset($ioBrokerComponent)) { echo "<script src='js/ioBroker.js?id=".rand(1,100)."'></script>"; } ?>
-
-
-
-
-
 	 
 	</body>
 </html>
