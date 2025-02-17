@@ -28,7 +28,7 @@ if(isset($_GET['lade']))
     $history = ( isset($_GET['history']) ? max(1, min(intval($_GET['history']), 5000)) : 200 );
 
     // Dateiname der cache Datei diagramm_<ise_id>_<collect>_<history>.csv
-    $datei = '../../cache/diagramm_'.preg_replace('/\D/', '-', $_GET['ise_id']).'_'.preg_replace('/\D/', '-', $collect).'_'.$history.'.csv';
+    $datei = '../../cache/diagramm_'.preg_replace('/\D/', '-', $_GET['ise_id']).'_'.preg_replace('/\W/', '-', $collect).'_'.$history.'.csv';
 
     // Daten zeilenweise in ein Array einlesen
     if(!file_exists($datei))
@@ -277,7 +277,7 @@ function diagramm($component) {
     $history = ( isset($component['history']) ? max(1, min(intval($component['history']), 5000)) : 200 );
 
 	// Dateiname der cache Datei diagramm_<ise_id>_<collect>_<history>.csv
-	$dateilink  = 'cache/diagramm_'.preg_replace('/\D/', '-', $component['ise_id']).'_'.preg_replace('/\D/', '-', $collect).'_'.$history.'.csv';
+	$dateilink  = 'cache/diagramm_'.preg_replace('/\D/', '-', $component['ise_id']).'_'.preg_replace('/\W/', '-', $collect).'_'.$history.'.csv';
 
 	$refresh = ( !empty($component["refresh"]) ? 'setInterval(execute_diagramm_'. $modalId.',('.$component['refresh'].'*1000));' : '' );
 
