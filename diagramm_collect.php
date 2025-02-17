@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 // Eintrag in Crontab
 //
@@ -7,6 +7,9 @@
 //
 // mit PHP-CLI
 // */1 * * * * /usr/bin/php -f /pfad-zu-homehub/diagramm_collect.php >/dev/null 2>&1
+
+ini_set('display_errors', 'on');
+ini_set('display_startup_errors', 'on');
 
 require_once(__DIR__.'/interface.php');
 
@@ -57,7 +60,7 @@ foreach ($json['custom'] as $customs) {
 				// history auf ganzzahlige Werte zwischen 1 und 5000 begrenzen, Standard 200
 				$history = ( empty($custom['history']) ? 200 : max(1, min(intval($custom['history']), 5000)) );
 
-				$custom['collect'] = trim($custom['collect']);
+				if (isset($custom['collect'])) $custom['collect'] = trim($custom['collect']);
 
 				if (empty($custom['collect'])) {
 				// <collect> nicht definiert => immer sammeln
@@ -98,14 +101,13 @@ foreach ($json['custom'] as $customs) {
 					if (!isset($diagramm[$custom['ise_id']][$custom['collect']][$history])) echo '- überspringe '.$custom['ise_id'].' '.$history.', fällig um '.$custom['collect'].PHP_EOL;
 				}
 				elseif (preg_match('/(min|max)/i', $custom['collect'])) {
-				// Tagesniederst/-höchstwert
-					if (preg_match('/^\d+$/', $custom['collect'])) {
-						$custom['collect'] = preg_replace('/[^minmax]/i', '', trim(strtolower($custom['collect'])));
-						$custom['collect'] = ( strpos($custom['collect'], 'min') !== false ? 'min' ).( strpos($custom['collect'], 'max') !== false ? 'max' );
+				// Tagesniederst- und/oder -höchstwert
+					if (preg_match('/^\d+$/', $custom['ise_id'])) {
+						$custom['collect'] = preg_replace('/[\W]/', '-', $custom['collect']);
 						$diagramm[$custom['ise_id']][$custom['collect']][$history] = add_diagramm($custom);
 						echo '- hole '.$custom['ise_id'].' für Ermittlung '.$custom['collect'].'-Wert'.PHP_EOL;
 					}
-					else echo '- min/max für mehrfache ise-id '.$custom['ise_id'].' nicht zulässig'.PHP_EOL;
+					else echo '- '.$collect.' für mehrfache ise-id '.$custom['ise_id'].' nicht zulässig'.PHP_EOL;
 				}
 				else {
 					echo '- '.$custom['collect'].' für '.$custom['ise_id'].' '.$history.' kann nicht interpretiert werden'.PHP_EOL;
@@ -177,12 +179,12 @@ foreach ($diagramm as $ise_id => $collects) {
 				}
 
 				// Prefix für Beschriftung X-Achse
-				if (preg_match('/^\d+:\d+/'), $collect) $prefix = $tage[date('w')].' '.date('d.m.');
+				if (preg_match('/^\d+:\d+/', $collect)) $prefix = $tage[date('w')].' '.date('d.m.');
 				elseif (preg_match('/(min|max)/', $collect)) $prefix = $tage[date('w')].' '.date('d.m.');
 				else $prefix = $tage[date('w')].' '.date('H:i');
 				# todo: Tag nur schreiben, wenn neuer Tag seit letztem Wert. Sollte mit $last[0] machbar sein #
 
-				$cfile = __DIR__.'/cache/diagramm_'.preg_replace('/\D/', '-', $ise_id).'_'.preg_replace('/\D/', '-', $collect).'_'.$history.'.csv';
+				$cfile = __DIR__.'/cache/diagramm_'.preg_replace('/\D/', '-', $ise_id).'_'.preg_replace('/\W/', '-', $collect).'_'.$history.'.csv';
 
 				if (file_exists($cfile)) {
 				// cache Datei ist vorhanden
@@ -215,10 +217,15 @@ foreach ($diagramm as $ise_id => $collects) {
 									array_pop($csv);
 									echo '- '.$collect.'-Wert '.$ise_id.' '.$history.' alt '.$last[1].' neu '.$values[$ise_id].PHP_EOL;
 								}
+							} else {
+								if (count($minmax[0]) == 2) {
+									$values[$ise_id] = strval($values[$ise_id]).';'.strval($values[$ise_id]);
+								}
+								echo '- '.$collect.' '.$ise_id.' '.$history.', beginne neuen Tag mit '.str_replace(';', ' / ', $values[$ise_id]).PHP_EOL;
 							}
 						}
 					}
-					
+
 					// Letzten gespeicherten Wert auslesen, überspringen falls unverändert
 					elseif (!empty($arr['only_changed'])) {
 						if (count($csv)) {
@@ -248,6 +255,12 @@ foreach ($diagramm as $ise_id => $collects) {
 
 					// keine Daten, leeres Array erzeugen
 					else $csv = array();
+
+					// Wert doppeln bei min+max, damit die neue Datei zwei Werte hat
+					if (preg_match('/min/i', $collect) and preg_match('/max/i', $collect)) {
+						$values[$ise_id] = strval($values[$ise_id]).';'.strval($values[$ise_id]);
+					}
+
 				}
 
 				$csv[] = $prefix.';'.$values[$ise_id].';';
