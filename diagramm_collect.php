@@ -209,7 +209,7 @@ foreach ($diagramm as $ise_id => $collects) {
 									array_pop($csv);
 									echo '- '.$collect.'-Werte '.$ise_id.' '.$history.' alt '.$last[1].' / '.$last[2].' neu '.str_replace(';', ' / ', $values[$ise_id]).PHP_EOL;
 								} else {
-									$values[$ise_id] = ( $collect == 'min' ? min($values[$ise_id], $last[1]) : max($values[$ise_id], $last[1]) );
+									$values[$ise_id] = ( preg_match('/min/i', $collect) ? min($values[$ise_id], $last[1]) : max($values[$ise_id], $last[1]) );
 									if ($values[$ise_id] == $last[1]) {
 										echo '- überspringe '.$collect.' '.$ise_id.' '.$history.', Wert ist unverändert '.$values[$ise_id].PHP_EOL;
 										continue;
