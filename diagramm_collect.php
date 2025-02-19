@@ -158,16 +158,18 @@ if (count($combine)) {
 	}
 }
 
-function precision($values, $precision) {
+function precision($values, $precision = 1) {
 // Numerische Werte in Dezimalzahl mit <precision> Nachkommastellen formatieren
+
+	$precision = intval(abs($precision));
 
 	if (is_array($values)) {
 		foreach ($values as $key => $value) {
-			if (is_numeric($value)) $values[$key] = number_format(floatval($values[$key]), $precision, '.', '');
+			if (is_numeric($value)) $values[$key] = ( $precision ? number_format(floatval($values[$key]), $precision, '.', '') : intval($values[$key]) );
 		}
 		return $values;
 	}
-	elseif (is_numeric($values)) return number_format(floatval($values), $precision, '.', '');
+	elseif (is_numeric($values)) return ( $precision ? number_format(floatval($values), $precision, '.', '') : intval($values) );
 	else return $values;
 }
 
@@ -208,7 +210,7 @@ foreach ($diagramm as $ise_id => $collects) {
 								if (count($minmax[0]) == 2) {
 								// min und max
 									// min() von aktuellem Wert und erstem Wert der letzten Zeile, max() von aktuellm Wert und zweitem Wert der letzten Zeile
-							 		$write[$ise_id] = strval(min($values[$ise_id], $last[1])).';'.strval(max($values[$ise_id], $last[2]));
+							 		$write[$ise_id] = precision(min($values[$ise_id], $last[1]), $arr['precision']).';'.precision(max($values[$ise_id], $last[2]), $arr['precision']);
 									if ($write[$ise_id] == $last[1].';'.$last[2]) {
 										echo '- überspringe '.$collect.' '.$ise_id.' '.$history.', Werte sind unverändert '.str_replace(';', ' / ', $write[$ise_id]).PHP_EOL;
 										continue;
@@ -218,7 +220,7 @@ foreach ($diagramm as $ise_id => $collects) {
 								} else {
 								// nur min oder max
 									// min() bzw. max() von aktuellem Wert und Wert der letzten Zeile
-									$write[$ise_id] = ( preg_match('/min/i', $collect) ? min($values[$ise_id], $last[1]) : max($values[$ise_id], $last[1]) );
+									$write[$ise_id] = ( preg_match('/min/i', $collect) ? precision(min($values[$ise_id], $last[1]), $arr['precision']) : precision(max($values[$ise_id], $last[1]), $arr['precision']) );
 									if ($write[$ise_id] == $last[1]) {
 										echo '- überspringe '.$collect.' '.$ise_id.' '.$history.', Wert ist unverändert '.$write[$ise_id].PHP_EOL;
 										continue;
@@ -243,9 +245,6 @@ foreach ($diagramm as $ise_id => $collects) {
 					// Letzten gespeicherten Wert auslesen, überspringen falls unverändert
 					elseif (!empty($arr['only_changed'])) {
 						if (count($csv)) {
-
-							$write[$ise_id] = precision($values[$ise_id], $arr['precision']);
-							$write[$ise_id] = ( is_array($write[$ise_id]) ? implode(';', $write[$ise_id]) : $write[$ise_id] );
 
 							$last = explode(';', rtrim($csv[count($csv)-1], ';'), 2);
 							if ($last[1] == $write[$ise_id]) {
