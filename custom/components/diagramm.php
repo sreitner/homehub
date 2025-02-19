@@ -8,7 +8,10 @@ Diagramm Addon
 //
 // component: diagramm
 // ise_id: eine oder mehrere (durch Komma getrennte) ISE_ID des/der zu sammelnden Datenpunkte(s)
-// collect: Abstand der Speicherung in Minuten, oder feste Uhrzeit(en) im Format HH:MM[,HH:MM[,...]]
+// collect: Speicher-Interval. Standard immer.
+//  - Ganzzahl: alle X Minuten sammeln
+//  - feste Uhrzeit(en) im Format HH:MM[,HH:MM[,...]]
+//  - min: Tagesniederstwert, max: Tageshöchstwert, min,max: beides  ! min/max bzw. beides ist nicht möglich mit mehreren ise_id !
 // history (optional): maximale Anzahl gespeicherter Werte, 1...5000. Standard 200.
 // size (optional): Höhe des Diagramms 0...3. Standard 100% Fensterhöhe.
 // precision (optional): Anzahl Dezimalstellen bei numerischen Werten. Standard 1.
