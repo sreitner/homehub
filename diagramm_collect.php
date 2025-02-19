@@ -180,7 +180,7 @@ foreach ($diagramm as $ise_id => $collects) {
 
 				// Prefix für Beschriftung X-Achse
 				if (preg_match('/^\d+:\d+/', $collect)) $prefix = $tage[date('w')].' '.date('d.m.');
-				elseif (preg_match('/(min|max)i/', $collect)) $prefix = $tage[date('w')].' '.date('d.m.');
+				elseif (preg_match('/(min|max)/i', $collect)) $prefix = $tage[date('w')].' '.date('d.m.');
 				else $prefix = $tage[date('w')].' '.date('H:i');
 				# todo: Tag nur schreiben, wenn neuer Tag seit letztem Wert. Sollte mit $last[0] machbar sein #
 
@@ -195,7 +195,7 @@ foreach ($diagramm as $ise_id => $collects) {
 					// Array auf maximal <history> Werte kürzen
 					while (count($csv) >= $history) array_shift($csv);
 
-					if (preg_match_all('/(min|max)i/', $collect, $minmax, PREG_PATTERN_ORDER)) {
+					if (preg_match_all('/(min|max)/i', $collect, $minmax, PREG_PATTERN_ORDER)) {
 					// letzten Wert für Min/Max auslesen, Element überschreiben
 						if (count($csv)) {
 							$last = explode(';', rtrim($csv[count($csv)-1], ';'), 3);
