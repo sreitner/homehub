@@ -20,6 +20,8 @@ if (php_sapi_name() != "cli") echo '<pre>'.PHP_EOL;
 
 $minute = date('H')*60 + date('i');
 echo "Es ist ".$tage[date('w')].' '.date('d.m.Y H:i:s').', die '.$minute.'. Minute des Tages'.PHP_EOL;
+if (isset($_GET['dryrun'])) { echo '--- SIMULATION ---'.PHP_EOL; $_GET['test'] = true; }
+if (isset($_GET['test'])) echo '--- TEST ---'.PHP_EOL;
 
 function read_config($file) {
 	if (!is_file($file)) return false;
@@ -42,6 +44,7 @@ function read_config($file) {
 // optinale Werte aus custom.json bzw. Standardwerte an Array übergeben
 function add_diagramm($custom) {
 	return array(
+		'type' => trim(strtolower($custom['component'])),
 		'only_changed' => ( !empty($custom['only_changed']) or strtolower($custom['component'])=="diagramm_change" ),
 		'precision' => ( empty($custom['precision']) ? 1 : intval($custom['precision']) ),
 	);
@@ -55,7 +58,7 @@ foreach ($json['custom'] as $customs) {
 	foreach ($customs as $custom) {
 		if (!empty($custom['component'])) {
 			// <component> ist eines von ...
-			if (in_array(strtolower($custom['component']), array("diagramm", "diagramm_eckig", "mdiagramm", "diagramm_change"))) {
+			if ((in_array(trim(strtolower($custom['component'])), array("diagramm", "diagramm_eckig", "mdiagramm", "diagramm_change")) and !isset($_GET['test'])) or (trim(strtolower($custom['component'])) == 'diagramm_test')) {
 
 				// history auf ganzzahlige Werte zwischen 1 und 5000 begrenzen, Standard 200
 				$history = ( empty($custom['history']) ? 200 : max(1, min(intval($custom['history']), 5000)) );
@@ -102,12 +105,9 @@ foreach ($json['custom'] as $customs) {
 				}
 				elseif (preg_match('/(min|max)/i', $custom['collect'])) {
 				// Tagesniederst- und/oder -höchstwert
-					if (preg_match('/^\d+$/', $custom['ise_id'])) {
-						$custom['collect'] = preg_replace('/[\W]/', '-', $custom['collect']);
-						$diagramm[$custom['ise_id']][$custom['collect']][$history] = add_diagramm($custom);
-						echo '- hole '.$custom['ise_id'].' für Ermittlung '.$custom['collect'].'-Wert'.PHP_EOL;
-					}
-					else echo '- '.$collect.' für mehrfache ise-id '.$custom['ise_id'].' nicht zulässig'.PHP_EOL;
+					$custom['collect'] = preg_replace('/[\W]/', '-', $custom['collect']);
+					$diagramm[$custom['ise_id']][$custom['collect']][$history] = add_diagramm($custom);
+					echo '- hole '.$custom['ise_id'].' für Ermittlung '.$custom['collect'].'-Wert'.PHP_EOL;
 				}
 				else {
 					echo '- '.$custom['collect'].' für '.$custom['ise_id'].' '.$history.' kann nicht interpretiert werden'.PHP_EOL;
@@ -158,6 +158,19 @@ if (count($combine)) {
 	}
 }
 
+function precision($values, $precision) {
+// Numerische Werte in Dezimalzahl mit <precision> Nachkommastellen formatieren
+
+	if (is_array($values)) {
+		foreach ($values as $key => $value) {
+			if (is_numeric($value)) $values[$key] = number_format(floatval($values[$key]), $precision, '.', '');
+		}
+		return $values;
+	}
+	elseif (is_numeric($values)) return number_format(floatval($values), $precision, '.', '');
+	else return $values;
+}
+
 foreach ($diagramm as $ise_id => $collects) {
 	if (isset($values[$ise_id])) {
 	// Datenpunkt nur verarbeiten, wenn Wert von CCU vorhanden ist
@@ -166,17 +179,8 @@ foreach ($diagramm as $ise_id => $collects) {
 			foreach ($histories as $history => $arr) {
 			// Einzelne Dateie je <collect> und <history> schreiben
 
-				// Numerische Werte in Dezimalzahl mit <precision> Nachkommastellen formatieren
-				if (is_numeric($values[$ise_id])) $values[$ise_id] = number_format(floatval($values[$ise_id]), $arr['precision'], '.', '');
-
-				// Werte für Mehrfach-Diagramme zusammensetzen
-				elseif (is_array($values[$ise_id])) {
-					$m_values = $values[$ise_id];
-					foreach ($m_values as $key => $value) {
-						if (is_numeric($value)) $m_values[$key] = number_format(floatval($m_values[$key]), $arr['precision'], '.', '');
-					}
-					$values[$ise_id] = implode(';', $m_values);
-				}
+				$write[$ise_id] = precision($values[$ise_id], $arr['precision']);
+				$write[$ise_id] = ( is_array($write[$ise_id]) ? implode(';', $write[$ise_id]) : $write[$ise_id] );
 
 				// Prefix für Beschriftung X-Achse
 				if (preg_match('/^\d+:\d+/', $collect)) $prefix = $tage[date('w')].' '.date('d.m.');
@@ -184,7 +188,7 @@ foreach ($diagramm as $ise_id => $collects) {
 				else $prefix = $tage[date('w')].' '.date('H:i');
 				# todo: Tag nur schreiben, wenn neuer Tag seit letztem Wert. Sollte mit $last[0] machbar sein #
 
-				$cfile = __DIR__.'/cache/diagramm_'.preg_replace('/\D/', '-', $ise_id).'_'.preg_replace('/\W/', '-', $collect).'_'.$history.'.csv';
+				$cfile = __DIR__.'/cache/diagramm_'.( $arr['type']=='diagramm_test' ? 'test_' : '' ).preg_replace('/\D/', '-', $ise_id).'_'.preg_replace('/\W/', '-', $collect).'_'.$history.'.csv';
 
 				if (file_exists($cfile)) {
 				// cache Datei ist vorhanden
@@ -200,28 +204,38 @@ foreach ($diagramm as $ise_id => $collects) {
 						if (count($csv)) {
 							$last = explode(';', rtrim($csv[count($csv)-1], ';'), 3);
 							if ($last[0] == $prefix) {
+							// gleicher Tag wie letzter Wert => überschreiben
 								if (count($minmax[0]) == 2) {
-							 		$values[$ise_id] = strval(min($values[$ise_id], $last[1])).';'.strval(max($values[$ise_id], $last[2]));
-									if ($values[$ise_id] == $last[1].';'.$last[2]) {
-										echo '- überspringe '.$collect.' '.$ise_id.' '.$history.', Werte sind unverändert '.str_replace(';', ' / ', $values[$ise_id]).PHP_EOL;
+								// min und max
+									// min() von aktuellem Wert und erstem Wert der letzten Zeile, max() von aktuellm Wert und zweitem Wert der letzten Zeile
+							 		$write[$ise_id] = strval(min($values[$ise_id], $last[1])).';'.strval(max($values[$ise_id], $last[2]));
+									if ($write[$ise_id] == $last[1].';'.$last[2]) {
+										echo '- überspringe '.$collect.' '.$ise_id.' '.$history.', Werte sind unverändert '.str_replace(';', ' / ', $write[$ise_id]).PHP_EOL;
 										continue;
 									}
 									array_pop($csv);
-									echo '- '.$collect.'-Werte '.$ise_id.' '.$history.' alt '.$last[1].' / '.$last[2].' neu '.str_replace(';', ' / ', $values[$ise_id]).PHP_EOL;
+									echo '- '.$collect.'-Werte '.$ise_id.' '.$history.' alt '.$last[1].' / '.$last[2].' neu '.str_replace(';', ' / ', $write[$ise_id]).PHP_EOL;
 								} else {
-									$values[$ise_id] = ( preg_match('/min/i', $collect) ? min($values[$ise_id], $last[1]) : max($values[$ise_id], $last[1]) );
-									if ($values[$ise_id] == $last[1]) {
-										echo '- überspringe '.$collect.' '.$ise_id.' '.$history.', Wert ist unverändert '.$values[$ise_id].PHP_EOL;
+								// nur min oder max
+									// min() bzw. max() von aktuellem Wert und Wert der letzten Zeile
+									$write[$ise_id] = ( preg_match('/min/i', $collect) ? min($values[$ise_id], $last[1]) : max($values[$ise_id], $last[1]) );
+									if ($write[$ise_id] == $last[1]) {
+										echo '- überspringe '.$collect.' '.$ise_id.' '.$history.', Wert ist unverändert '.$write[$ise_id].PHP_EOL;
 										continue;
 									}
 									array_pop($csv);
-									echo '- '.$collect.'-Wert '.$ise_id.' '.$history.' alt '.$last[1].' neu '.$values[$ise_id].PHP_EOL;
+									echo '- '.$collect.'-Wert '.$ise_id.' '.$history.' alt '.$last[1].' neu '.$write[$ise_id].PHP_EOL;
 								}
 							} else {
+							// Neuer Tag, neue Zeile mit Werten anhängen. Für min+max aktuellen Wert als Min und Max aneinanderreihen.
 								if (count($minmax[0]) == 2) {
-									$values[$ise_id] = strval($values[$ise_id]).';'.strval($values[$ise_id]);
+									$m_value = '';
+									foreach (( !empty($combine[$ise_id]) ? $combine[$ise_id] : array($ise_id) ) as $m_ise_id) {
+										$m_value .= str_repeat(precision($values[$m_ise_id], $arr['precision']).';', 2);
+									}
+									$write[$ise_id] = rtrim($m_value, ';');
 								}
-								echo '- '.$collect.' '.$ise_id.' '.$history.', beginne neuen Tag mit '.str_replace(';', ' / ', $values[$ise_id]).PHP_EOL;
+								echo '- '.$collect.' '.$ise_id.' '.$history.', beginne neuen Tag mit '.str_replace(';', ' / ', $write[$ise_id]).PHP_EOL;
 							}
 						}
 					}
@@ -229,11 +243,16 @@ foreach ($diagramm as $ise_id => $collects) {
 					// Letzten gespeicherten Wert auslesen, überspringen falls unverändert
 					elseif (!empty($arr['only_changed'])) {
 						if (count($csv)) {
+
+							$write[$ise_id] = precision($values[$ise_id], $arr['precision']);
+							$write[$ise_id] = ( is_array($write[$ise_id]) ? implode(';', $write[$ise_id]) : $write[$ise_id] );
+
 							$last = explode(';', rtrim($csv[count($csv)-1], ';'), 2);
-							if ($last[1] == $values[$ise_id]) {
-								echo '- überspringe '.$ise_id.' '.$collect.' '.$history.', Wert ist unverändert '.$values[$ise_id].'.'.PHP_EOL;
+							if ($last[1] == $write[$ise_id]) {
+								echo '- überspringe '.$ise_id.' '.$collect.' '.$history.', Wert ist unverändert '.$write[$ise_id].'.'.PHP_EOL;
 								continue;
 							}
+
 						}
 					}
 
@@ -241,8 +260,10 @@ foreach ($diagramm as $ise_id => $collects) {
 				// cache Datei nicht vorhanden, anlegen und Schreirechte setzen
 
 					echo '- '.basename($cfile).' nicht vorhanden, lege neu an'.PHP_EOL;
-					touch($cfile);
-					if (!chmod($cfile, 0666)) echo 'Fehler beim setzen der Schreibrechte für '.$cfile.PHP_EOL;
+					if (!isset($_GET['dryrun'])) {
+						touch($cfile);
+						if (!chmod($cfile, 0666)) echo 'Fehler beim setzen der Schreibrechte für '.$cfile.PHP_EOL;
+					}
 
 					// Prüfen, ob es eine cache Datei in altem Dateinamenformat (diagramm_<ise_id>_<history>.csv) gibt
 					$oldfile = __DIR__.'/cache/diagramm_'.preg_replace('/\D/', '-', $ise_id).'_'.$history.'.csv';
@@ -258,14 +279,18 @@ foreach ($diagramm as $ise_id => $collects) {
 
 					// Wert doppeln bei min+max, damit die neue Datei zwei Werte hat
 					if (preg_match('/min/i', $collect) and preg_match('/max/i', $collect)) {
-						$values[$ise_id] = strval($values[$ise_id]).';'.strval($values[$ise_id]);
+						$m_value = '';
+						foreach (( !empty($combine[$ise_id]) ? $combine[$ise_id] : array($ise_id) ) as $m_ise_id) {
+							$m_value .= str_repeat(precision($values[$m_ise_id], $arr['precision']).';', 2);
+						}
+						$write[$ise_id] = rtrim($m_value, ';');
 					}
 
 				}
 
-				$csv[] = $prefix.';'.$values[$ise_id].';';
-				echo '- schreibe '.$prefix.' = '.$values[$ise_id].' nach '.basename($cfile).PHP_EOL;
-				file_put_contents($cfile, implode("\n", $csv));
+				$csv[] = $prefix.';'.$write[$ise_id].';';
+				echo '- schreibe '.$prefix.' = '.$write[$ise_id].' nach '.basename($cfile).PHP_EOL;
+				if (!isset($_GET['dryrun'])) file_put_contents($cfile, implode("\n", $csv));
 
 			}
 		}
