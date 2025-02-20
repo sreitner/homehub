@@ -64,7 +64,7 @@ foreach ($json['custom'] as $customs) {
 	foreach ($customs as $custom) {
 		if (!empty($custom['component'])) {
 			// <component> ist eines von ...
-			if ((in_array(trim(strtolower($custom['component'])), array("diagramm", "diagramm_eckig", "mdiagramm", "diagramm_change")) and empty($_test)) or (trim(strtolower($custom['component'])) == 'diagramm_test')) {
+			if ((in_array(trim(strtolower($custom['component'])), array("diagramm", "diagramm_eckig", "mdiagramm", "diagramm_change")) and empty($_test)) or ((trim(strtolower($custom['component'])) == 'diagramm_test') and !empty($_test))) {
 
 				// history auf ganzzahlige Werte zwischen 1 und 5000 begrenzen, Standard 200
 				$history = ( empty($custom['history']) ? 200 : max(1, min(intval($custom['history']), 5000)) );
@@ -170,15 +170,15 @@ function precision($values, $precision = 1) {
 
 	if (is_array($values)) {
 		foreach ($values as $key => $value) {
-			if ($_verbose) echo 'v  formatiere '.$values[$key].' in ';
+			if (!empty($_verbose)) echo 'v  formatiere '.$values[$key].' in ';
 			if (is_numeric($value)) $values[$key] = ( $precision ? number_format(floatval($values[$key]), $precision, '.', '') : intval($values[$key]) );
-			if ($_verbose) echo $values[$key].PHP_EOL;
+			if (!empty($_verbose)) echo $values[$key].PHP_EOL;
 		}
 	}
 	elseif (is_numeric($values)) {
-		if ($_verbose) echo 'v  formatiere '.$values.' in ';
+		if (!empty($_verbose)) echo 'v  formatiere '.$values.' in ';
 		$values = ( $precision ? number_format(floatval($values), $precision, '.', '') : intval($values) );
-		if ($_verbose) echo $values.PHP_EOL;
+		if (!empty($_verbose)) echo $values.PHP_EOL;
 	}
 
 	return $values;
@@ -191,18 +191,18 @@ foreach ($diagramm as $ise_id => $collects) {
 		foreach ($collects as $collect => $histories) {
 			foreach ($histories as $history => $arr) {
 			// Einzelne Dateie je <collect> und <history> schreiben
-				if ($_verbose) echo 'v  verarbeite '.$ise_id.', collect '.$collect.', history '.$history.PHP_EOL;
+				if (!empty($_verbose)) echo 'v  verarbeite '.$ise_id.', collect '.$collect.', history '.$history.PHP_EOL;
 
 				$write[$ise_id] = precision($values[$ise_id], $arr['precision']);
 				$write[$ise_id] = ( is_array($write[$ise_id]) ? implode(';', $write[$ise_id]) : $write[$ise_id] );
-				if ($_verbose) echo 'v  CCU Werte '.strval($write[$ise_id]).PHP_EOL;
+				if (!empty($_verbose)) echo 'v  CCU Werte '.strval($write[$ise_id]).PHP_EOL;
 
 				// Prefix für Beschriftung X-Achse
 				if (preg_match('/^\d+:\d+/', $collect)) $prefix = $tage[date('w')].' '.date('d.m.');
 				elseif (preg_match('/(min|max)/i', $collect)) $prefix = $tage[date('w')].' '.date('d.m.');
 				else $prefix = $tage[date('w')].' '.date('H:i');
 				# todo: Tag nur schreiben, wenn neuer Tag seit letztem Wert. Sollte mit $last[0] machbar sein #
-				if ($_verbose) echo 'v  Datensatz-Prefix '.($prefix).PHP_EOL;
+				if (!empty($_verbose)) echo 'v  Datensatz-Prefix '.($prefix).PHP_EOL;
 
 				$cfile = __DIR__.'/cache/diagramm_'.( $arr['type']=='diagramm_test' ? 'test_' : '' ).preg_replace('/\D/', '-', $ise_id).'_'.preg_replace('/\W/', '-', $collect).'_'.$history.'.csv';
 
@@ -229,7 +229,7 @@ foreach ($diagramm as $ise_id => $collects) {
 									foreach (( is_array($values[$ise_id]) ? $combine[$ise_id] : array($ise_id) ) as $key => $m_ise_id) {
 										$write[$ise_id][] = min($values[$m_ise_id], $last[($key * 2)]);
 										$write[$ise_id][] = max($values[$m_ise_id], $last[(($key * 2) + 1)]);
-										if ($_verbose) echo 'v  '.$ise_id.' '.$collect.' '.$m_ise_id.' letzte Werte '.$last[($key * 2)].' '.$last[(($key * 2) + 1)].', aktueller Wert '.$values[$m_ise_id].PHP_EOL;
+										if (!empty($_verbose)) echo 'v  '.$ise_id.' '.$collect.' '.$m_ise_id.' letzte Werte '.$last[($key * 2)].' '.$last[(($key * 2) + 1)].', aktueller Wert '.$values[$m_ise_id].PHP_EOL;
 									}
 									$write[$ise_id] = precision($write[$ise_id], $arr['precision']);
 									$write[$ise_id] = implode(';', $write[$ise_id]);
@@ -245,7 +245,7 @@ foreach ($diagramm as $ise_id => $collects) {
 									$m_value = array();
 									foreach (( is_array($values[$ise_id]) ? $combine[$ise_id] : array($ise_id) ) as $key => $m_ise_id) {
 										$m_value[] = precision(( preg_match('/min/i', $collect) ? min($values[$m_ise_id], $last[$key]) : max($values[$m_ise_id], $last[$key]) ), $arr['precision']);
-										if ($_verbose) echo 'v  '.$ise_id.' '.$collect.' '.$m_ise_id.' letzter Wert '.$last[$key].', aktueller Wert '.$values[$m_ise_id].PHP_EOL;
+										if (!empty($_verbose)) echo 'v  '.$ise_id.' '.$collect.' '.$m_ise_id.' letzter Wert '.$last[$key].', aktueller Wert '.$values[$m_ise_id].PHP_EOL;
 									}
 									$write[$ise_id] = implode(';', $m_value);
 									if ($write[$ise_id] == implode(';', $last)) {
