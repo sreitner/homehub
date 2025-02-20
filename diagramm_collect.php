@@ -21,9 +21,9 @@ if (php_sapi_name() != "cli") echo '<pre>'.PHP_EOL;
 $minute = date('H')*60 + date('i');
 echo "Es ist ".$tage[date('w')].' '.date('d.m.Y H:i:s').', die '.$minute.'. Minute des Tages'.PHP_EOL;
 
-if (isset($_GET['dryrun']) or (!empty($argv[1]) and $argv[1]=='dryrun'])) { echo '--- SIMULATION ---'.PHP_EOL; $_dryrun=true; $_test=true; $_verbose=true; }
-elseif (isset($_GET['test']) or (!empty($argv[1]) and $argv[1]=='test'])) { echo '--- TEST ---'.PHP_EOL; $_test=true; $_verbose=true; }
-elseif (isset($_GET['verbose']) or (!empty($argv[1]) and $argv[1]=='verbose'])) { $_verbose=true; }
+if (isset($_GET['dryrun']) or (!empty($argv[1]) and $argv[1]=='dryrun')) { echo '--- SIMULATION ---'.PHP_EOL; $_dryrun=true; $_test=true; $_verbose=true; }
+elseif (isset($_GET['test']) or (!empty($argv[1]) and $argv[1]=='test')) { echo '--- TEST ---'.PHP_EOL; $_test=true; $_verbose=true; }
+elseif (isset($_GET['verbose']) or (!empty($argv[1]) and $argv[1]=='verbose')) { $_verbose=true; }
 
 function read_config($file) {
 	if (!is_file($file)) return false;
@@ -147,8 +147,8 @@ if (!count($datapoints)) {
 $xml = simplexml_load_string(api_state($ccu, $datapoints, true));
 if (!is_object($xml->datapoint)) die('Fehler beim Auslesen der CCU-Abfrage!'.PHP_EOL);
 foreach ($xml->datapoint as $datapoint) {
-	$ise_id = $datapoint->attributes()['ise_id'];
-	$value = $datapoint->attributes()['value'];
+	$ise_id = strval($datapoint->attributes()['ise_id']);
+	$value = strval($datapoint->attributes()['value']);
 	$values[$ise_id] = $value;
 	echo '- Wert: '.strval($ise_id).' = '.strval($value).PHP_EOL;
 }
@@ -177,9 +177,9 @@ function precision($values, $precision = 1) {
 		}
 	}
 	elseif (is_numeric($values)) {
-		if ($_verbose) echo 'v  formatiere '.$values[$key].' in ';
+		if ($_verbose) echo 'v  formatiere '.$values.' in ';
 		$values = ( $precision ? number_format(floatval($values), $precision, '.', '') : intval($values) );
-		if ($_verbose) echo $values[$key].PHP_EOL;
+		if ($_verbose) echo $values.PHP_EOL;
 	}
 
 	return $values;
@@ -246,7 +246,7 @@ foreach ($diagramm as $ise_id => $collects) {
 									$m_value = array();
 									foreach (( is_array($values[$ise_id]) ? $combine[$ise_id] : array($ise_id) ) as $key => $m_ise_id) {
 										$m_value[] = precision(( preg_match('/min/i', $collect) ? min($values[$m_ise_id], $last[$key]) : max($values[$m_ise_id], $last[$key]) ), $arr['precision']);
-										if ($_verbose) echo 'v  '.$ise_id.' '.$collect.' '.$m_ise_id.' letzter Wert '.$last[$key].', aktueller Wert '.$values[$m_ise_id].', Ergebnis '.$m_value.PHP_EOL;
+										if ($_verbose) echo 'v  '.$ise_id.' '.$collect.' '.$m_ise_id.' letzter Wert '.$last[$key].', aktueller Wert '.$values[$m_ise_id].PHP_EOL;
 									}
 									$write[$ise_id] = implode(';', $m_value);
 									if ($write[$ise_id] == implode(';', $last)) {
