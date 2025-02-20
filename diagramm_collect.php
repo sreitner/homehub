@@ -48,7 +48,7 @@ function add_diagramm($custom) {
 	return array(
 		'type' => trim(strtolower($custom['component'])),
 		'only_changed' => ( !empty($custom['only_changed']) or strtolower($custom['component'])=="diagramm_change" ),
-		'precision' => ( empty($custom['precision']) ? 1 : intval($custom['precision']) ),
+		'precision' => ( !isset($custom['precision']) ? 1 : min(abs(intval($custom['precision'])), 5) ),
 	);
 }
 
@@ -167,7 +167,6 @@ if (count($combine)) {
 function precision($values, $precision = 1) {
 // Numerische Werte in Dezimalzahl mit <precision> Nachkommastellen formatieren
 	global $_verbose;
-	$precision = intval(abs($precision));
 
 	if (is_array($values)) {
 		foreach ($values as $key => $value) {
@@ -226,14 +225,14 @@ foreach ($diagramm as $ise_id => $collects) {
 								if (count($minmax[0]) == 2) {
 								// min und max
 									// min() von aktuellem Wert und erstem Wert der letzten Zeile, max() von aktuellm Wert und zweitem Wert der letzten Zeile
-									$m_value = array();
+									$write[$ise_id] = array();
 									foreach (( is_array($values[$ise_id]) ? $combine[$ise_id] : array($ise_id) ) as $key => $m_ise_id) {
-										$m_value[] = min($values[$m_ise_id], $last[($key * 2)]);
-										$m_value[] = max($values[$m_ise_id], $last[(($key * 2) + 1)]);
+										$write[$ise_id][] = min($values[$m_ise_id], $last[($key * 2)]);
+										$write[$ise_id][] = max($values[$m_ise_id], $last[(($key * 2) + 1)]);
 										if ($_verbose) echo 'v  '.$ise_id.' '.$collect.' '.$m_ise_id.' letzte Werte '.$last[($key * 2)].' '.$last[(($key * 2) + 1)].', aktueller Wert '.$values[$m_ise_id].PHP_EOL;
 									}
 									$write[$ise_id] = precision($write[$ise_id], $arr['precision']);
-									$write[$ise_id] = implode(';', $m_value);
+									$write[$ise_id] = implode(';', $write[$ise_id]);
 									if ($write[$ise_id] == implode(';', $last)) {
 										echo '- überspringe '.$collect.' '.$ise_id.' '.$history.', Werte sind unverändert '.str_replace(';', ' / ', $write[$ise_id]).PHP_EOL;
 										continue;
