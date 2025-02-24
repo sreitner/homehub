@@ -30,14 +30,14 @@ if (isset($_GET['lade']) and ($_GET['lade'] == 'content')) {
     $history = ( empty($_GET['history']) ? 200 : max(1, min(intval($_GET['history']), 5000)) );
 
     // Dateiname der cache Datei diagramm_<ise_id>_<collect>_<history>.csv
-    $cfile = __DIR__.'../../cache/diagramm_'.preg_replace('/\D/', '-', $_GET['ise_id']).'_'.preg_replace('/\W/', '-', $collect).'_'.$history.'.csv';
+    $cfile = __DIR__.'/../../cache/diagramm_'.preg_replace('/\D/', '-', $_GET['ise_id']).'_'.preg_replace('/\W/', '-', $collect).'_'.$history.'.csv';
 
     // Daten zeilenweise in ein Array einlesen
-    if (!file_exists($cfile)) die('Cache-Datei existiert nicht');
+    if (!file_exists($cfile)) die('Cache-Datei '.realpath($cfile).' existiert nicht');
     else $cache = file($cfile);
     if (!is_array($cache)) die('Diagramm hat keine Werte');
 	foreach($cache as $linenr => $record) {
-		$record = explode(';', rtrim($record; ';'));
+		$record = explode(';', rtrim(trim($record), ';'));
 		if (count($record) < 2) continue;
 
 		// Prefix zwischenspeichern und entfernen
@@ -69,7 +69,7 @@ if (isset($_GET['lade']) and ($_GET['lade'] == 'content')) {
 	if( $y_max == 100) { $y_max = 99.5; }
 */
 
-	if (!empty($_GET['legend'])) $legend = explode(';', rtrim($_GET['legend'], ';'));
+	if (!empty($_GET['legend'])) $legend = explode(';', $_GET['legend']);
 
 	echo '<script>
 ctx = document.getElementById("chart_'.$_GET['modalID'].'");
@@ -83,8 +83,8 @@ new Chart(ctx, {
 
 	foreach ($chart as $line => $values) {
 		echo '		{
-			label: "'.( isset($legend[($line + 1)] ? $legend[($line + 1)] : '').'",
-			data: ['.implode(',', $values.'],
+			label: "'.( isset($legend[$line]) ? $legend[$line] : '' ).'",
+			data: ['.implode(',', $values).'],
 			borderColor: "#'.$colors[($line % count($colors))].'",
 			borderWidth: 1.5,
 			pointRadius: 0,
