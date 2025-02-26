@@ -22,16 +22,19 @@ Diagramm Addon
 
 $colors = array('53a6dc', 'ec7657', 'f3af54', '6fc689', '6a3ba3', 'cc3300', 'ffff00', 'ffffcc', '339933', '999966', 'cc33ff');
 
-if (!empty($_GET['lade'])) {
+if (!empty($_GET['diagramm'])) {
 
-	$chart_id = preg_replace('/[^\d\w\-_]/i', '', base64_decode($_GET['lade']));
-	$modal_id = rtrim($_GET['lade'], '=');
+	// Diagramm-Parameter
+	if (!$param = json_decode(base64_decode($_GET['diagramm']), true)) die('Fehlerhafte Daten');
+	if (!$chart_id = preg_replace('/[^\d\w\-_]/i', '', $param['chart'])) die('Ungültiger Diagrammlink');
+	$modal_id = rtrim(base64_encode($chart_id), '=');
+	$legend = ( !empty($param['legend']) ? preg_split("/[\t,;]/i", $param['legend']) : array() );
 
 	// Dateiname der cache Datei diagramm_<ise_id>_<collect>_<history>.csv
 	$cfile = realpath(__DIR__.'/../../cache').'/diagramm_'.$chart_id.'.csv';
+	if (!file_exists($cfile)) die('Cache-Datei '.$cfile.' existiert nicht');
 
 	// Daten zeilenweise in ein Array einlesen
-	if (!file_exists($cfile)) die('Cache-Datei '.$cfile.' existiert nicht');
 	$cache = file($cfile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 	if (!is_array($cache)) die('Diagramm hat keine Werte');
 	foreach($cache as $linenr => $record) {
@@ -56,10 +59,6 @@ if (!empty($_GET['lade'])) {
 
 	// Puffer freigeben
 	unset ($cache);
-
-	// Diagramm-Parameter
-	$param = ( !empty($_GET['param']) ? json_decode(base64_decode($_GET['param']), true) : array() );
-	$legend = ( !empty($param['legend']) ? preg_split("/[\t,;]/i", $param['legend']) : array() );
 
 	echo '<canvas id="chart_'.$modal_id.'" style="position: relative; width: 100vw; height: '.( (isset($param['size']) and is_numeric($param['size'])) ? strval(30 + 20 * intval($param['size'])) : '100' ).'vh"></canvas>'.PHP_EOL;
 
@@ -158,20 +157,14 @@ function diagramm($component) {
 	$cfilelink	= 'cache/diagramm_'.$chart_id.'.csv';
 
 	// dom Diagramm-ID
-	#$modal_id = mt_rand();
-	$load_chart = base64_encode($chart_id);
-	$modal_id = rtrim($load_chart, '=');
+	$modal_id = rtrim(base64_encode($chart_id), '=');
 
-	$refresh = ( !empty($component["refresh"]) ? 'setInterval(execute_diagramm_'. $modal_id.',('.$component['refresh'].'*1000));' : '' );
-
-	#$legend = ( !empty($component['legend']) ? '&legend='.$component['legend'] : '' );
-	#if (!isset($component['size'])) $component['size'] = '';
+	#$refresh = ( !empty($component["refresh"]) ? 'setInterval(execute_diagramm_'. $modal_id.',('.$component['refresh'].'*1000));' : '' );
 
 	// Parameter formatieren und zusammenfassen
-	$param = array();
+	$param = array('chart' => $chart_id);
 	if (isset($component['size'])) $param['size'] = $component['size'];
 	if (isset($component['legend'])) $param['legend'] = $component['legend'];
-	if (count($param)) $json_param = json_encode($param);
 
 	//style="display:flow-root;
 
@@ -199,7 +192,7 @@ function diagramm($component) {
 $(window).bind("load", execute_diagramm_'. $modal_id.');
 function execute_diagramm_'. $modal_id.'() {
   $.ajax({
-	url: "custom/components/diagramm.php?lade='.$load_chart.( !empty($json_param) ? '&param='.base64_encode($json_param) : '').'",
+	url: "custom/components/diagramm.php?diagramm='.base64_encode(json_encode($param)).'",
 	success: function(data) {
 	  $("#'. $modal_id.'").html("" + data);
 
