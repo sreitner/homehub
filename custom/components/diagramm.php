@@ -7,16 +7,23 @@ Diagramm Addon
 // Parameter (config/custom.json)
 //
 // component: diagramm
+//
+// Einstellungen für die Daten
 // ise_id: eine oder mehrere (durch Komma getrennte) ISE_ID des/der zu sammelnden Datenpunkte(s)
-// collect: Speicher-Interval. Standard immer.
+// collect (optional): Speicher-Interval. Standard immer.
 //	- Ganzzahl: alle <collect> Minuten sammeln
 //	- feste Uhrzeit(en) im Format HH:MM[,HH:MM[,...]]
 //	- min: Tagesniederstwert, max: Tageshöchstwert, minmax: beides
 // history (optional): maximale Anzahl gespeicherter Werte, 1...5000. Standard 200.
-// size (optional): Höhe des Diagramms 0...3. Standard 100% Fensterhöhe.
 // precision (optional): Anzahl Dezimalstellen bei numerischen Werten. Standard 1.
 // only_changed (optional): 1/true/yes: nur speichern, wenn sich der Wert geändert hat. Standard false.
+//
+// Einstellungen für die Darstellung
+// legend (optional): Legende/Beschriftung der Datenlinien
+// color (optional): HTML-Farbcode des Balkens am linken Rand. Standard transparent.
+// size (optional): Höhe des Diagramms 0...3. Standard 100% Fensterhöhe.
 // aufgeklappt (optional): 1/true/yes: Diagramm wird beim laden aufgeklappt. Standard false.
+// pointRadius (optional): Durchmesser der Messwertpunkte in px. Standard 0.
 //
 ////////////////////////////////////////////////////
 
@@ -71,6 +78,8 @@ if (!empty($_GET['diagramm'])) {
 	if( $y_max == 100) { $y_max = 99.5; }
 */
 
+// Doku: https://www.chartjs.org/docs/latest/charts/line.html
+
 	echo '
 <script>
 ctx = document.getElementById("chart_'.$modal_id.'");
@@ -89,7 +98,7 @@ new Chart(ctx, {
 			data: ['.implode(',', $values).'],
 			borderColor: "#'.$colors[($line % count($colors))].'",
 			borderWidth: 1.5,
-			pointRadius: 0,
+			pointRadius: '.( isset($param['pointRadius']) ? intval($param['pointRadius']) : 0 ).',
 			fill: false,
 			backgroundColor: "transparent",
 			lineTension: 0.1,
@@ -163,12 +172,11 @@ function diagramm($component) {
 
 	// Parameter formatieren und zusammenfassen
 	$param = array('chart' => $chart_id);
-	if (isset($component['size'])) $param['size'] = $component['size'];
-	if (isset($component['legend'])) $param['legend'] = $component['legend'];
-
-	//style="display:flow-root;
-
-	//$aufgeklappt = ( (isset($component['aufgeklappt']) and in_array(strtolower($component['aufgeklappt']), array('1', 'yes', 'true'))) ? '$("#'.$modal_id.'").collapse("toggle");' : '' );
+	foreach ($component as $key => $val) {
+		// Parameter ausschließen, die nicht an das Diagramm übergeben werden sollen. Alle anderen stehen dann im Array param zur Verfügung.
+		if (in_array($option, ['component', 'name', 'ise_id', 'collect', 'history', 'color', 'link', 'icon', 'aufgeklappt', 'precision', 'only_changed'])) continue;
+		$param[$key] = $val;
+	}
 
 	if(isset($component['aufgeklappt']) and in_array(strtolower($component['aufgeklappt']), array('1', 'yes', 'true'))) {
 		$aufgeklappt = array('collapse in', 'true', 'collapse collapsed in');
@@ -195,7 +203,6 @@ function execute_diagramm_'. $modal_id.'() {
 	url: "custom/components/diagramm.php?diagramm='.base64_encode(json_encode($param)).'",
 	success: function(data) {
 	  $("#'. $modal_id.'").html("" + data);
-
 	}
   });
 }
