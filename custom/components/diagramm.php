@@ -23,7 +23,9 @@ Diagramm Addon
 // color (optional): HTML-Farbcode des Balkens am linken Rand. Standard transparent.
 // size (optional): Höhe des Diagramms 0...3. Standard 100% Fensterhöhe.
 // aufgeklappt (optional): 1/true/yes: Diagramm wird beim laden aufgeklappt. Standard false.
-// pointRadius (optional): Durchmesser der Messwertpunkte in px. Standard 0.
+// point-radius (optional): Durchmesser der Messwertpunkte in px. Standard 0.
+// line-color (optional): Linienfarbe 0-12. Standard erste Linie 0, zweite Linie 1, ...
+// min-y, max-y (optional): Unterster bzw. oberster Wertbereich der Y-Achse. Standard angepasst an Werte.
 //
 ////////////////////////////////////////////////////
 
@@ -96,9 +98,9 @@ new Chart(ctx, {
 		echo '		{
 			label: "'.( isset($legend[$line]) ? $legend[$line] : '' ).'",
 			data: ['.implode(',', $values).'],
-			borderColor: "#'.$colors[($line % count($colors))].'",
+			borderColor: "#'.$colors[(( isset($param['line-color']) ? intval($param['line-color']) : $line ) % count($colors))].'",
 			borderWidth: 1.5,
-			pointRadius: '.( isset($param['pointRadius']) ? intval($param['pointRadius']) : 0 ).',
+			pointRadius: '.( isset($param['point-radius']) ? intval($param['point-radius']) : 0 ).',
 			fill: false,
 			backgroundColor: "transparent",
 			lineTension: 0.1,
@@ -134,6 +136,8 @@ new Chart(ctx, {
 				},
 			},
 			y: {
+				'.( isset($param['min-y']) ? 'min: '.intval($param['min-y']).',' : '' ).'
+				'.( isset($param['max-y']) ? 'max: '.intval($param['max-y']).',' : '' ).'
 				ticks: {
 					precision: 0,
 					color: "white",
@@ -168,7 +172,7 @@ function diagramm($component) {
 	// dom Diagramm-ID
 	$modal_id = rtrim(base64_encode($chart_id), '=');
 
-	#$refresh = ( !empty($component["refresh"]) ? 'setInterval(execute_diagramm_'. $modal_id.',('.$component['refresh'].'*1000));' : '' );
+	$refresh = ( (!empty($component['refresh']) and intval($component['refresh'])) ? 'refresh_diagramm_'.$modal_id.' = setInterval(execute_diagramm_'.$modal_id.', '.(intval($component['refresh']) * 1000 * 60).');' : '' );
 
 	// Parameter formatieren und zusammenfassen
 	$param = array('chart' => $chart_id);
@@ -206,6 +210,7 @@ function execute_diagramm_'. $modal_id.'() {
 	}
   });
 }
+'.$refresh.'
 </script>
 ';
 }
