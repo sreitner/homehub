@@ -26,6 +26,7 @@ Diagramm Addon
 // point-radius (optional): Durchmesser der Messwertpunkte in px. Standard 0
 // line-color (optional): Linienfarbe 0-10. Bei mehreren ise_id eine Farbe für alle oder durch Komma getrennt. Standard 0,1,2,...,10
 // min-y, max-y (optional): Unterster bzw. oberster Wertbereich der Y-Achse. Standard angepasst an Werte
+// bool-true-value, bool-false-value: Umrechnungswerte für boolean Datenpunkte, Wert für true bzw. false. Standard 1 / 0
 //
 ////////////////////////////////////////////////////
 
@@ -63,8 +64,17 @@ if (!empty($_GET['diagramm'])) {
 */
 
 		// Array transponieren. Erzeugt pro Datenpunkt ein Array mit den Werten.
-		foreach ($record as $column => $val) $chart[$column][$linenr] = $val;
+		foreach ($record as $column => $val) {
+
+			// boolean Werte in numerische Werte umwandeln
+			if (in_array(strtolower($val), ['true', 'false'])) $val = ( strtolower($val) == 'true' ? ( isset($param['bool-true-value']) ? floatval($param['bool-true-value']) : 1 ) : ( isset($param['bool-false-value']) ? floatval($param['bool-false-value']) : 0 ) );
+
+			$chart[$column][$linenr] = $val;
+		}
 	}
+
+	// Puffer freigeben
+	unset ($cache);
 
 	// Linienfarben
 	if (isset($param['line-color'])) {
@@ -73,19 +83,7 @@ if (!empty($_GET['diagramm'])) {
 	}
 	else $param['line-color'] = array();	// Standardfarben
 
-	// Puffer freigeben
-	unset ($cache);
-
 	echo '<canvas id="chart_'.$modal_id.'" style="position: relative; width: 100vw; height: '.( (isset($param['size']) and is_numeric($param['size'])) ? strval(30 + 20 * intval($param['size'])) : '100' ).'vh"></canvas>'.PHP_EOL;
-
-/*
-	$tCh = ($y_min + 0.5) - $y_max;
-	if($tCh > 0) { $y_max = $y_max + $tCh; }
-
-	if ($y_min <> 0) $y_min = $y_min -0.5;
-	else $y_min = -1;
-	if( $y_max == 100) { $y_max = 99.5; }
-*/
 
 // Doku: https://www.chartjs.org/docs/latest/charts/line.html
 
