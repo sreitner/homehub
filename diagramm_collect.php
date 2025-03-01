@@ -66,7 +66,7 @@ foreach ($json['custom'] as $customs) {
 			// <component> ist eines von ...
 			if ((in_array(trim(strtolower($custom['component'])), array("diagramm", "diagramm_eckig", "mdiagramm", "diagramm_change")) and empty($_test)) or ((trim(strtolower($custom['component'])) == 'diagramm_test') and !empty($_test))) {
 
-				// history auf ganzzahlige Werte zwischen 1 und 5000 begrenzen, Standard 200
+				// <historyY auf ganzzahlige Werte zwischen 1 und 5000 begrenzen, Standard 200
 				$history = ( empty($custom['history']) ? 200 : max(1, min(intval($custom['history']), 5000)) );
 
 				if (isset($custom['collect'])) $custom['collect'] = trim($custom['collect']);
@@ -227,8 +227,8 @@ foreach ($diagramm as $ise_id => $collects) {
 									// min() von aktuellem Wert und erstem Wert der letzten Zeile, max() von aktuellm Wert und zweitem Wert der letzten Zeile
 									$write[$ise_id] = array();
 									foreach (( is_array($values[$ise_id]) ? $combine[$ise_id] : array($ise_id) ) as $key => $m_ise_id) {
-										$write[$ise_id][] = min($values[$m_ise_id], $last[($key * 2)]);
-										$write[$ise_id][] = max($values[$m_ise_id], $last[(($key * 2) + 1)]);
+										$write[$ise_id][] = min(floatval($values[$m_ise_id]), $last[($key * 2)]);
+										$write[$ise_id][] = max(floatval($values[$m_ise_id]), $last[(($key * 2) + 1)]);
 										if (!empty($_verbose)) echo 'v  '.$ise_id.' '.$collect.' '.$m_ise_id.' letzte Werte '.$last[($key * 2)].' '.$last[(($key * 2) + 1)].', aktueller Wert '.$values[$m_ise_id].PHP_EOL;
 									}
 									$write[$ise_id] = precision($write[$ise_id], $arr['precision']);
@@ -244,7 +244,7 @@ foreach ($diagramm as $ise_id => $collects) {
 									// min() bzw. max() von aktuellen Werten und Werten der letzten Zeile
 									$m_value = array();
 									foreach (( is_array($values[$ise_id]) ? $combine[$ise_id] : array($ise_id) ) as $key => $m_ise_id) {
-										$m_value[] = precision(( preg_match('/min/i', $collect) ? min($values[$m_ise_id], $last[$key]) : max($values[$m_ise_id], $last[$key]) ), $arr['precision']);
+										$m_value[] = precision(( preg_match('/min/i', $collect) ? min(floatval($values[$m_ise_id]), $last[$key]) : max(floatval($values[$m_ise_id]), $last[$key]) ), $arr['precision']);
 										if (!empty($_verbose)) echo 'v  '.$ise_id.' '.$collect.' '.$m_ise_id.' letzter Wert '.$last[$key].', aktueller Wert '.$values[$m_ise_id].PHP_EOL;
 									}
 									$write[$ise_id] = implode(';', $m_value);
@@ -260,7 +260,7 @@ foreach ($diagramm as $ise_id => $collects) {
 								if (count($minmax[0]) == 2) {
 									$m_value = '';
 									foreach (( is_array($values[$ise_id]) ? $combine[$ise_id] : array($ise_id) ) as $m_ise_id) {
-										$m_value .= str_repeat(precision($values[$m_ise_id], $arr['precision']).';', 2);
+										$m_value .= str_repeat(precision(floatval($values[$m_ise_id]), $arr['precision']).';', 2);
 									}
 									$write[$ise_id] = rtrim($m_value, ';');
 								}
@@ -307,7 +307,7 @@ foreach ($diagramm as $ise_id => $collects) {
 					if (preg_match('/min/i', $collect) and preg_match('/max/i', $collect)) {
 						$m_value = '';
 						foreach (( !empty($combine[$ise_id]) ? $combine[$ise_id] : array($ise_id) ) as $m_ise_id) {
-							$m_value .= str_repeat(precision($values[$m_ise_id], $arr['precision']).';', 2);
+							$m_value .= str_repeat(precision(floatval($values[$m_ise_id]), $arr['precision']).';', 2);
 						}
 						$write[$ise_id] = rtrim($m_value, ';');
 					}
