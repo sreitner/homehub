@@ -9,23 +9,23 @@ Diagramm Addon
 // component: diagramm
 //
 // Einstellungen für die Daten
-// ise_id: eine oder mehrere (durch Komma getrennte) ISE_ID des/der zu sammelnden Datenpunkte(s)
-// collect (optional): Speicher-Interval. Standard immer.
+// ise_id: eine oder mehrere (durch Komma getrennte) ise_id des/der zu sammelnden Datenpunkte(s)
+// collect (optional): Speicher-Interval. Standard immer
 //	- Ganzzahl: alle <collect> Minuten sammeln
 //	- feste Uhrzeit(en) im Format HH:MM[,HH:MM[,...]]
 //	- min: Tagesniederstwert, max: Tageshöchstwert, minmax: beides
-// history (optional): maximale Anzahl gespeicherter Werte, 1...5000. Standard 200.
-// precision (optional): Anzahl Dezimalstellen bei numerischen Werten. Standard 1.
-// only_changed (optional): 1/true/yes: nur speichern, wenn sich der Wert geändert hat. Standard false.
+// history (optional): maximale Anzahl gespeicherter Werte, 1...5000. Standard 200
+// precision (optional): Anzahl Dezimalstellen bei numerischen Werten. Standard 1
+// only_changed (optional): 1/true/yes: nur speichern, wenn sich der Wert geändert hat. Standard false
 //
 // Einstellungen für die Darstellung
 // legend (optional): Legende/Beschriftung der Datenlinien
-// color (optional): HTML-Farbcode des Balkens am linken Rand. Standard transparent.
-// size (optional): Höhe des Diagramms 0...3. Standard 100% Fensterhöhe.
-// aufgeklappt (optional): 1/true/yes: Diagramm wird beim laden aufgeklappt. Standard false.
-// point-radius (optional): Durchmesser der Messwertpunkte in px. Standard 0.
-// line-color (optional): Linienfarbe 0-12. Standard erste Linie 0, zweite Linie 1, ...
-// min-y, max-y (optional): Unterster bzw. oberster Wertbereich der Y-Achse. Standard angepasst an Werte.
+// color (optional): HTML-Farbcode des Balkens am linken Rand. Standard transparent
+// size (optional): Höhe des Diagramms 0...3. Standard 100% Fensterhöhe
+// aufgeklappt (optional): 1/true/yes: Diagramm wird beim laden aufgeklappt. Standard false
+// point-radius (optional): Durchmesser der Messwertpunkte in px. Standard 0
+// line-color (optional): Linienfarbe 0-10. Bei mehreren ise_id eine Farbe für alle oder durch Komma getrennt. Standard 0,1,2,...,10
+// min-y, max-y (optional): Unterster bzw. oberster Wertbereich der Y-Achse. Standard angepasst an Werte
 //
 ////////////////////////////////////////////////////
 
@@ -66,6 +66,13 @@ if (!empty($_GET['diagramm'])) {
 		foreach ($record as $column => $val) $chart[$column][$linenr] = $val;
 	}
 
+	// Linienfarben
+	if (isset($param['line-color'])) {
+		if (preg_match('/\D/i', $param['line-color'])) $param['line-color'] = preg_split("/\D+/i", $param['line-color']);	// einzelne Farben trennen
+		else $param['line-color'] = array_fill(0, count($chart), intval($param['line-color']));		// gleiche Farbe für alle
+	}
+	else $param['line-color'] = array();	// Standardfarben
+
 	// Puffer freigeben
 	unset ($cache);
 
@@ -98,7 +105,7 @@ new Chart(ctx, {
 		echo '		{
 			label: "'.( isset($legend[$line]) ? $legend[$line] : '' ).'",
 			data: ['.implode(',', $values).'],
-			borderColor: "#'.$colors[(( isset($param['line-color']) ? intval($param['line-color']) : $line ) % count($colors))].'",
+			borderColor: "#'.$colors[(( isset($param['line-color'][$line]) ? intval($param['line-color'][$line]) : $line ) % count($colors))].'",
 			borderWidth: 1.5,
 			pointRadius: '.( isset($param['point-radius']) ? intval($param['point-radius']) : 0 ).',
 			fill: false,
