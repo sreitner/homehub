@@ -30,7 +30,7 @@ Diagramm Addon
 //
 ////////////////////////////////////////////////////
 
-$colors = array('53a6dc', 'ec7657', 'f3af54', '6fc689', '6a3ba3', 'cc3300', 'ffff00', 'ffffcc', '339933', '999966', 'cc33ff');
+$colors = array('53a6dc', 'ec7657', 'f3af54', 'adff2f', '6a3ba3', 'cc3300', 'ffff00', 'ffffcc', '339933', '999966', 'cc33ff');
 
 if (!empty($_GET['diagramm'])) {
 
