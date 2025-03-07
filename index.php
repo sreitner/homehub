@@ -30,7 +30,7 @@ if(!file_exists("config/custom.json"))
 	echo "config/custom.json existiert nicht. Kopiere config/custom.template.json nach config/custom.json";
 	echo "Aktualsiere die Seite";
 	if (!copy("config/custom.template.json", "config/custom.json")) {
-		echo "Konnte Datei nicht kopieren. Gib Schreibreche auf den Ordner 'config'";
+		echo "Konnte Datei nicht kopieren. Gibt Schreibreche auf den Ordner 'config'";
 		exit();
 	}
 
@@ -41,7 +41,7 @@ if(!file_exists("config/categories.json"))
 	echo "config/categories.json existiert nicht. Kopiere config/categories.template.json nach config/categories.json";
 	echo "Aktualsiere die Seite";
 	if (!copy("config/categories.template.json", "config/categories.json")) {
-		echo "Konnte Datei nicht kopieren. Gib Schreibreche auf den Ordner 'config'";
+		echo "Konnte Datei nicht kopieren. Gibt Schreibreche auf den Ordner 'config'";
 		exit();
 	}
 
@@ -86,8 +86,7 @@ if ($str = read_config('config/categories.json'))
 	#	}	
 	#}
 	
-    $json = json_decode($str, true);
-    if (empty($json)) die('Fehler beim Einlesen der config/categories.json, bitte Dateiformat prüfen!');
+    if (!$json = json_decode($str, true)) die('Syntaxfehler config/categories.json');
     $menu = $json['categories'];
     if(isset($menu[0]['name'])) { $Startseite = $menu[0]['name']; }
     // Erstelle Array mit name = aktuelle seite und displayname = aktuele Seite
@@ -156,8 +155,7 @@ if($str = read_config('config/custom.json'))
 	#	}	
 	#}
 	
-    $json = json_decode($str, true);
-    if (empty($json)) die('Fehler beim Einlesen der config/custom.json, bitte Dateiformat prüfen!');
+    if (!$json = json_decode($str, true)) die('Syntaxfehler config/custom.json');
     if(isset($json['custom'])) 
 	{
         $custom = $json['custom'];
@@ -176,8 +174,7 @@ $mapping = array();
 if($str = read_config('config/mapping.json'))
 {
     #$str = file_get_contents('config/mapping.json');
-    $json = json_decode($str, true);
-    if (empty($json)) die('Fehler beim Einlesen der config/mapping.json, bitte Dateiformat prüfen!');
+    if (!$json = json_decode($str, true)) die('Syntaxfehler config/mapping.json');
     if(isset($json['mapping'])) 
 	{
         $mapping = $json['mapping'];
@@ -196,7 +193,7 @@ $export = array();
 if($str = read_config('config/export.json'))
 {
     #$str = file_get_contents('config/export.json');
-    $export = json_decode($str, true);
+    if (!$export = json_decode($str, true)) die('Syntaxfehler config/export.json');
 }
 else 
 { 
