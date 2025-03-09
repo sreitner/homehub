@@ -30,7 +30,7 @@ Diagramm Addon
 //
 ////////////////////////////////////////////////////
 
-$colors = array('53a6dc', 'ec7657', 'f3af54', 'adff2f', '6a3ba3', 'cc3300', 'ffff00', 'ffffcc', '339933', '999966', 'cc33ff');
+$colors = array('53a6dc', 'ec7657', 'f3af54', '6fc689', '6a3ba3', 'cc3300', 'ffff00', 'ffffcc', '339933', '999966', 'cc33ff');
 
 if (!empty($_GET['diagramm'])) {
 
@@ -183,7 +183,7 @@ function diagramm($component) {
 	$param = array('chart' => $chart_id);
 	foreach ($component as $key => $val) {
 		// Parameter ausschließen, die nicht an das Diagramm übergeben werden sollen. Alle anderen stehen dann im Array param zur Verfügung.
-		if (in_array($option, ['component', 'name', 'ise_id', 'collect', 'history', 'color', 'link', 'icon', 'aufgeklappt', 'precision', 'only_changed'])) continue;
+		if (in_array($key, ['component', 'name', 'ise_id', 'collect', 'history', 'color', 'link', 'icon', 'aufgeklappt', 'precision', 'only_changed'])) continue;
 		$param[$key] = $val;
 	}
 
