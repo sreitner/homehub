@@ -217,7 +217,7 @@ foreach ($diagramm as $ise_id => $collects) {
 				# todo: Tag nur schreiben, wenn neuer Tag seit letztem Wert. Sollte mit $last[0] machbar sein #
 				if (!empty($_verbose)) echo 'v  Datensatz-Prefix '.($prefix).PHP_EOL;
 
-				$cfile = __DIR__.'/cache/diagramm_'.( $arr['type']=='diagramm_test' ? 'test_' : '' ).preg_replace('/\D/', '-', $ise_id).'_'.preg_replace('/\W/', '-', $collect).'_'.$history.'.csv';
+				$cfile = __DIR__.'/cache/diagramm_'.( $arr['type']=='diagramm_test' ? 'test_' : '' ).$ise_id.'_'.preg_replace('/\W/', '-', $collect).'_'.$history.'.csv';
 
 				if (file_exists($cfile)) {
 				// cache Datei ist vorhanden
@@ -305,7 +305,7 @@ foreach ($diagramm as $ise_id => $collects) {
 					}
 
 					// Prüfen, ob es eine cache Datei in altem Dateinamenformat (diagramm_<ise_id>_<history>.csv) gibt
-					$oldfile = __DIR__.'/cache/diagramm_'.preg_replace('/\D/', '-', $ise_id).'_'.$history.'.csv';
+					$oldfile = __DIR__.'/cache/diagramm_'.$ise_id.'_'.$history.'.csv';
 					if (file_exists($oldfile)) {
 					// alte Datei vorhanden, Inhalt einlesen und Datei löschen
 						echo '- Verschiebe Daten von '.basename($oldfile).' nach '.basename($cfile).PHP_EOL;
