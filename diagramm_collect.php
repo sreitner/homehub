@@ -67,7 +67,9 @@ foreach ($json['custom'] as $customs) {
 			if ((in_array(trim(strtolower($custom['component'])), array("diagramm", "diagramm_eckig", "mdiagramm", "diagramm_change")) and empty($_test)) or ((trim(strtolower($custom['component'])) == 'diagramm_test') and !empty($_test))) {
 
 				if (preg_match('/\D/', $custom['ise_id'])) {
+					if (!empty($_verbose)) echo 'v  formatiere "'.$custom['ise_id'].'" zu "';
 					$custom['ise_id'] = trim(preg_replace('/\D+/', '-', $custom['ise_id']), '-');
+					if (!empty($_verbose)) echo $custom['ise_id'].'"'.PHP_EOL;
 				}
 
 				// <historyY auf ganzzahlige Werte zwischen 1 und 5000 begrenzen, Standard 200
