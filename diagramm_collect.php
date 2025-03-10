@@ -21,7 +21,7 @@ if (php_sapi_name() != "cli") echo '<pre>'.PHP_EOL;
 $minute = date('H')*60 + date('i');
 echo "Es ist ".$tage[date('w')].' '.date('d.m.Y H:i:s').', die '.$minute.'. Minute des Tages'.PHP_EOL;
 
-if (isset($_GET['dryrun']) or (!empty($argv[1]) and $argv[1]=='dryrun')) { echo '--- SIMULATION ---'.PHP_EOL; $_dryrun=true; $_test=true; $_verbose=true; }
+if (isset($_GET['dryrun']) or (!empty($argv[1]) and $argv[1]=='dryrun')) { echo '--- SIMULATION ---'.PHP_EOL; $_dryrun=true; $_verbose=true; }
 elseif (isset($_GET['test']) or (!empty($argv[1]) and $argv[1]=='test')) { echo '--- TEST ---'.PHP_EOL; $_test=true; $_verbose=true; }
 elseif (isset($_GET['verbose']) or (!empty($argv[1]) and $argv[1]=='verbose')) { $_verbose=true; }
 
@@ -124,18 +124,27 @@ foreach ($json['custom'] as $customs) {
 	}
 }
 
+$datapoints = array_keys($diagramm);
+if (!empty($_verbose)) echo 'v gefundene Indizes "'.implode('", "', $datapoints).'"'.PHP_EOL;
+
 // Mehrere ise_id einer Definition vereinzeln, damit alle Werte bei der CCU abgefragt werden
 // Erklärung: Wenn Datenpunkte als Array an die api_state in der interface.php übergeben, trennt diese nicht mehr nach Trennzeichen.
-$datapoints = array_keys($diagramm);
 $combine = array();
 foreach ($datapoints as $key => $ise_id) {
 	if (preg_match('/\D/', $ise_id)) {
-		$split = preg_split('/\D+/', $ise_id);
-		$combine[$ise_id] = $split;		// damit nachher wieder zusammengesetzt werden kann
-		array_splice($datapoints, $key, 1);		// Diesen Eintrag löschen, dafür ...
-		$datapoints = array_merge($datapoints, $split);		// ... einzelne Datenpunkte anhängen.
+		if (!empty($_verbose)) echo 'v trenne '.$ise_id.PHP_EOL;
+		$split_ise_id = trim(preg_replace('/\D+/', ' ', $ise_id));
+		if (strpos($split_ise_id, ' ')) {
+			$split = explode(' ', $split_ise_id);
+			if (!empty($_verbose)) echo 'v '.$split_ise_id.', '.count($split).' Datenpunkte'.PHP_EOL;
+			$combine[$ise_id] = $split;		// damit nachher wieder zusammengesetzt werden kann
+			array_splice($datapoints, $key, 1, $split);		// Dieses Element löschen, dafür einzelne Datenpunkte anhängen.
+		}
 	}
 }
+
+$datapoints = array_unique($datapoints);
+if (!empty($_verbose)) echo 'v abzufragende Datenpunkte '.implode(', ', $datapoints).PHP_EOL;
 
 if (!count($datapoints)) {
 	echo 'Beende, da keine relevanten Datenpunkte.'.PHP_EOL.PHP_EOL;
