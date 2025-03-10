@@ -66,6 +66,10 @@ foreach ($json['custom'] as $customs) {
 			// <component> ist eines von ...
 			if ((in_array(trim(strtolower($custom['component'])), array("diagramm", "diagramm_eckig", "mdiagramm", "diagramm_change")) and empty($_test)) or ((trim(strtolower($custom['component'])) == 'diagramm_test') and !empty($_test))) {
 
+				if (preg_match('/\D/', $custom['ise_id'])) {
+					$custom['ise_id'] = trim(preg_replace('/\D+/', '-', $custom['ise_id']), '-');
+				}
+
 				// <historyY auf ganzzahlige Werte zwischen 1 und 5000 begrenzen, Standard 200
 				$history = ( empty($custom['history']) ? 200 : max(1, min(intval($custom['history']), 5000)) );
 
@@ -125,26 +129,22 @@ foreach ($json['custom'] as $customs) {
 }
 
 $datapoints = array_keys($diagramm);
-if (!empty($_verbose)) echo 'v gefundene Indizes "'.implode('", "', $datapoints).'"'.PHP_EOL;
+if (!empty($_verbose)) echo 'v  gefundene Indizes "'.implode('", "', $datapoints).'"'.PHP_EOL;
 
 // Mehrere ise_id einer Definition vereinzeln, damit alle Werte bei der CCU abgefragt werden
 // Erklärung: Wenn Datenpunkte als Array an die api_state in der interface.php übergeben, trennt diese nicht mehr nach Trennzeichen.
 $combine = array();
 foreach ($datapoints as $key => $ise_id) {
-	if (preg_match('/\D/', $ise_id)) {
-		if (!empty($_verbose)) echo 'v trenne '.$ise_id.PHP_EOL;
-		$split_ise_id = trim(preg_replace('/\D+/', ' ', $ise_id));
-		if (strpos($split_ise_id, ' ')) {
-			$split = explode(' ', $split_ise_id);
-			if (!empty($_verbose)) echo 'v '.$split_ise_id.', '.count($split).' Datenpunkte'.PHP_EOL;
-			$combine[$ise_id] = $split;		// damit nachher wieder zusammengesetzt werden kann
-			array_splice($datapoints, $key, 1, $split);		// Dieses Element löschen, dafür einzelne Datenpunkte anhängen.
-		}
+	if (strpos($ise_id, '-')) {
+		$split = explode('-', $ise_id);
+		if (!empty($_verbose)) echo 'v  trenne '.$ise_id.', '.count($split).' Datenpunkte'.PHP_EOL;
+		$combine[$ise_id] = $split;		// damit nachher wieder zusammengesetzt werden kann
+		array_splice($datapoints, $key, 1, $split);		// Dieses Element löschen, dafür einzelne Datenpunkte anhängen.
 	}
 }
 
 $datapoints = array_unique($datapoints);
-if (!empty($_verbose)) echo 'v abzufragende Datenpunkte '.implode(', ', $datapoints).PHP_EOL;
+if (!empty($_verbose)) echo 'v  abzufragende Datenpunkte '.implode(', ', $datapoints).PHP_EOL;
 
 if (!count($datapoints)) {
 	echo 'Beende, da keine relevanten Datenpunkte.'.PHP_EOL.PHP_EOL;
@@ -167,6 +167,10 @@ if (count($combine)) {
 	foreach ($combine as $ise_id => $multiple) {
 		$join = array();
 		foreach ($multiple as $datapoint) {
+			if (!isset($values[$datapoint])) {
+				echo '! Datenpunkt '.$datapoint.' in CCU-Antwort nicht gefunden'.PHP_EOL;
+				continue;
+			}
 			$join[] = $values[$datapoint];
 		}
 		$values[$ise_id] = $join;
