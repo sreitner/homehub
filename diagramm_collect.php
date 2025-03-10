@@ -136,16 +136,20 @@ if (!empty($_verbose)) echo 'v  gefundene Indizes "'.implode('", "', $datapoints
 // Mehrere ise_id einer Definition vereinzeln, damit alle Werte bei der CCU abgefragt werden
 // Erklärung: Wenn Datenpunkte als Array an die api_state in der interface.php übergeben, trennt diese nicht mehr nach Trennzeichen.
 $combine = array();
-foreach ($datapoints as $key => $ise_id) {
+$a_datapoints = array();
+foreach ($datapoints as $ise_id) {
 	if (strpos($ise_id, '-')) {
 		$split = explode('-', $ise_id);
-		if (!empty($_verbose)) echo 'v  trenne '.$ise_id.', '.count($split).' Datenpunkte'.PHP_EOL;
+		if (!empty($_verbose)) echo 'v  trenne '.$ise_id.', '.count($split).' Datenpunkte: '.implode(' ', $split).PHP_EOL;
 		$combine[$ise_id] = $split;		// damit nachher wieder zusammengesetzt werden kann
-		array_splice($datapoints, $key, 1, $split);		// Dieses Element löschen, dafür einzelne Datenpunkte anhängen.
+		$a_datapoints = array_merge($a_datapoints, $split);
+	} else {
+		$a_datapoints[] = $ise_id;
 	}
 }
 
-$datapoints = array_unique($datapoints);
+$datapoints = array_unique($a_datapoints);
+unset($a_datapoints);
 if (!empty($_verbose)) echo 'v  abzufragende Datenpunkte '.implode(', ', $datapoints).PHP_EOL;
 
 if (!count($datapoints)) {
@@ -167,6 +171,7 @@ foreach ($xml->datapoint as $datapoint) {
 // Werte für Mehrfach-Diagramme zusammensetzen
 if (count($combine)) {
 	foreach ($combine as $ise_id => $multiple) {
+		if (!empty($_verbose)) echo 'v  setze '.$ise_id.' zusammen'.PHP_EOL;
 		$join = array();
 		foreach ($multiple as $datapoint) {
 			if (!isset($values[$datapoint])) {
